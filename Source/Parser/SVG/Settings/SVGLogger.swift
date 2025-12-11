@@ -1,13 +1,9 @@
-//
-//  SVGLogger.swift
-//  SVGView
-//
-//  Created by Yuri Strot on 26.05.2022.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
 import Foundation
 
-public class SVGLogger {
+public final class SVGLogger {
 
     public static let console = SVGLogger()
 

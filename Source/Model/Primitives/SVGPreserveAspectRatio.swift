@@ -1,13 +1,9 @@
-//
-//  SVGPreserveAspectRatio.swift
-//  SVGView
-//
-//  Created by Yuriy Strot on 20.01.2021.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
-import SwiftUI
+import CoreGraphics
 
-public class SVGPreserveAspectRatio {
+public struct SVGPreserveAspectRatio {
 
     public let scaling: Scaling
     public let xAlign: Align
@@ -20,7 +16,7 @@ public class SVGPreserveAspectRatio {
     }
 
     public func layout(size: CGSize, into sizeToFitIn: CGSize) -> CGAffineTransform {
-        return layout(rect: CGRect(origin: CGPoint.zero, size: size), into: sizeToFitIn)
+        layout(rect: CGRect(origin: CGPoint.zero, size: size), into: sizeToFitIn)
     }
 
     public func layout(rect: CGRect, into sizeToFitIn: CGSize) -> CGAffineTransform {
@@ -43,7 +39,7 @@ public class SVGPreserveAspectRatio {
         return nil
     }
 
-    public enum Align: String, SerializableEnum {
+    public enum Align: String {
 
         case mid
         case min
@@ -52,21 +48,21 @@ public class SVGPreserveAspectRatio {
         public func align(outer: CGFloat, inner: CGFloat) -> CGFloat {
             switch self {
             case .mid:
-                return (outer - inner) / 2
+                (outer - inner) / 2
             case .max:
-                return outer - inner
+                outer - inner
             default:
-                return 0
+                0
             }
         }
 
         public func align(size: CGFloat) -> CGFloat {
-            return align(outer: size, inner: 0)
+            align(outer: size, inner: 0)
         }
 
     }
 
-    public enum Scaling: String, SerializableEnum {
+    public enum Scaling: String {
 
         case meet
         case slice
@@ -90,11 +86,11 @@ public class SVGPreserveAspectRatio {
         }
 
         public func fit(rect: CGRect, into rectToFitIn: CGRect) -> CGSize {
-            return fit(size: rect.size, into: rectToFitIn.size)
+            fit(size: rect.size, into: rectToFitIn.size)
         }
 
         public func fit(size: CGSize, into rectToFitIn: CGRect) -> CGSize {
-            return fit(size: size, into: rectToFitIn.size)
+            fit(size: size, into: rectToFitIn.size)
         }
 
     }

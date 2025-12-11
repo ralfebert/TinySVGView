@@ -1,102 +1,93 @@
-//
-//  SVGView.swift
-//  SVGView
-//
-//  Created by Alisa Mylnikova on 20/07/2020.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
-import SwiftUI
+import Foundation
 
-public struct SVGParser {
+final class XMLDelegate: NSObject, XMLParserDelegate {
 
-    static public func parse(contentsOf url: URL, settings: SVGSettings = .default) -> SVGNode? {
-        let xml = DOMParser.parse(contentsOf: url, logger: settings.logger)
-        return parse(xml: xml, settings: settings.linkIfNeeded(to: url))
+    let logger: SVGLogger
+    var root: SVGNode?
+    var stack = [SVGNode]()
+
+    init(logger: SVGLogger) {
+        self.logger = logger
     }
 
-    static public func parse(data: Data, settings: SVGSettings = .default) -> SVGNode? {
-        let xml = DOMParser.parse(data: data, logger: settings.logger)
-        return parse(xml: xml, settings: settings)
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes: [String: String] = [:]) {
+        precondition(root == nil)
+
+        var node: SVGNode
+        switch elementName {
+        case "svg":
+            let w = SVGHelper.parseDouble(attributes, "width")
+            let h = SVGHelper.parseDouble(attributes, "height")
+            let par = SVGPreserveAspectRatio.parsePreserveAspectRatio(string: attributes["preserveAspectRatio"])
+            node = SVGViewport(width: w, height: h, preserveAspectRatio: par)
+
+        case "g":
+            node = SVGGroup(contents: [])
+
+        case "path":
+            let segments = PathReader(input: attributes["d"] ?? "").read()
+            var path = SVGPath(segments: segments, fillRule: attributes["fill-rule"] == "evenodd" ? .evenOdd : .winding)
+            path.fill = SVGHelper.parseFill(attributes)
+            path.stroke = SVGHelper.parseStroke(attributes)
+            node = path
+
+        default:
+            fatalError("Unknown element: \(elementName)")
+        }
+
+        Self.parseBasicAttributes(properties: attributes, node: &node)
+
+        stack.append(node)
     }
 
-    static public func parse(string: String, settings: SVGSettings = .default) -> SVGNode? {
-        let xml = DOMParser.parse(string: string, logger: settings.logger)
-        return parse(xml: xml, settings: settings)
+    static func parseBasicAttributes(properties: [String: String], node: inout SVGNode) {
+        let transform = SVGHelper.parseTransform(properties["transform"] ?? "")
+        node.transform = node.transform.concatenating(transform)
+        node.opacity = SVGHelper.parseOpacity(properties, "opacity")
+        node.id = properties["id"]
     }
 
-    static public func parse(stream: InputStream, settings: SVGSettings = .default) -> SVGNode? {
-        let xml = DOMParser.parse(stream: stream, logger: settings.logger)
-        return parse(xml: xml, settings: settings)
-    }
-
-    static public func parse(xml: XMLElement?, settings: SVGSettings = .default) -> SVGNode? {
-        guard let xml = xml else { return nil }
-
-        return parse(element: xml, parentContext: SVGRootContext(
-            logger: settings.logger,
-            linker: settings.linker,
-            screen: SVGScreen.main(ppi: settings.ppi),
-            index: SVGIndex(element: xml),
-            defaultFontSize: settings.fontSize))
-    }
-
-    @available(*, deprecated, message: "Use parse(contentsOf:) function instead")
-    static public func parse(fileURL: URL) -> SVGNode? {
-        return parse(contentsOf: fileURL)
-    }
-
-    private static func parse(element: XMLElement, parentContext: SVGContext) -> SVGNode? {
-        guard let context = parentContext.create(for: element) else { return nil }
-        return parse(context: context)
-    }
-
-    private static let parsers: [String:SVGElementParser] = [
-        "svg": SVGViewportParser(),
-        "g": SVGGroupParser(),
-        "use": SVGUseParser(),
-        "text": SVGTextParser(),
-        "image": SVGImageParser(),
-        "rect": SVGRectParser(),
-        "circle": SVGCircleParser(),
-        "ellipse": SVGEllipseParser(),
-        "line": SVGLineParser(),
-        "polygon": SVGPolygonParser(),
-        "polyline": SVGPolylineParser(),
-        "path": SVGPathParser(),
-    ]
-
-    private static func parse(context: SVGNodeContext) -> SVGNode? {
-        return parsers[context.element.name]?.parse(context: context) {
-            parse(element: $0, parentContext: context)
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        let node = stack.popLast()!
+        if stack.isEmpty {
+            precondition(elementName == "svg")
+            precondition(root == nil)
+            root = node
+        } else {
+            var parent = stack.last as! SVGNodeContainer
+            parent.contents.append(node)
+            stack[stack.count - 1] = parent
         }
     }
 
-    static func getStyleAttributes(xml: XMLElement, index: SVGIndex) -> [String: String] {
-        var styleDict = xml.attributes.filter { SVGConstants.availableStyleAttributes.contains($0.key) }
-            .filter { $0.value != "inherit" }
+    func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
+        logger.log(error: parseError)
+    }
 
-        for (att, val) in index.cssStyle(for: xml) {
-            if styleDict.index(forKey: att) == nil {
-                styleDict.updateValue(val, forKey: att)
-            }
-        }
+}
 
-        if let cssStyle = xml.attributes["style"] {
-            let styleParts = cssStyle.replacingOccurrences(of: " ", with: "").components(separatedBy: ";")
-            styleParts.forEach { styleAttribute in
-                let currentStyle = styleAttribute.components(separatedBy: ":")
-                if currentStyle.count == 2 {
-                    styleDict.updateValue(currentStyle[1], forKey: currentStyle[0])
-                }
-            }
-        }
+public enum SVGParser {
 
-        // TODO: it's a temporary solution. Need to create a correct style merging mechanics
-        if styleDict["fill"] == "currentColor", let color = styleDict["color"] {
-            styleDict["fill"] = color
-        }
+    public static func parse(contentsOf url: URL, settings: SVGSettings = .default) -> SVGNode? {
+        parse(XMLParser(contentsOf: url), logger: settings.logger)
+    }
 
-        return styleDict
+    public static func parse(data: Data, settings: SVGSettings = .default) -> SVGNode? {
+        parse(XMLParser(data: data), logger: settings.logger)
+    }
+
+    public static func parse(stream: InputStream, settings: SVGSettings = .default) -> SVGNode? {
+        parse(XMLParser(stream: stream), logger: settings.logger)
+    }
+
+    private static func parse(_ parser: XMLParser?, logger: SVGLogger) -> SVGNode? {
+        let delegate = XMLDelegate(logger: logger)
+        parser?.delegate = delegate
+        parser?.parse()
+        return delegate.root
     }
 
 }

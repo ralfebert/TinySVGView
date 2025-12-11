@@ -1,46 +1,32 @@
-//
-//  SVGParserPrimitives.swift
-//  SVGView
-//
-//  Created by Alisa Mylnikova on 20/07/2020.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
-public class SVGHelper: NSObject {
+public enum SVGHelper {
 
-    static func parseUse(_ use: String?) -> String? {
-        guard let use = use else {
-            return .none
-        }
-        return use.replacingOccurrences(of: "url(#", with: "")
-            .replacingOccurrences(of: ")", with: "")
-    }
-
-    static func parseId(_ dict: [String: String]) -> String? {
-        return dict["id"] ?? dict["xml:id"]
-    }
-
-    static func parseStroke(_ style: [String: String], index: SVGIndex) -> SVGStroke? {
-        guard let fill = SVGHelper.parseStrokeFill(style, index) else {
+    static func parseStroke(_ style: [String: String]) -> SVGStroke? {
+        guard let fill = SVGHelper.parseStrokeFill(style) else {
             return .none
         }
 
         return SVGStroke(
-            fill: fill.opacity(SVGHelper.parseOpacity(style, "stroke-opacity", alternativeKeys: ["opacity"])),
+            fill: fill,
             width: parseCGFloat(style, "stroke-width", defaultValue: 1),
             cap: getStrokeCap(style),
             join: getStrokeJoin(style),
             miterLimit: parseCGFloat(style, "stroke-miterlimit", defaultValue: 4),
             dashes: getStrokeDashes(style),
-            offset: parseCGFloat(style, "stroke-dashoffset"))
+            offset: parseCGFloat(style, "stroke-dashoffset")
+        )
     }
 
     static func getStrokeDashes(_ style: [String: String]) -> [CGFloat] {
         var dashes = [CGFloat]()
         if let strokeDashes = style["stroke-dasharray"] {
             let separatedValues = strokeDashes.components(separatedBy: CharacterSet(charactersIn: " ,"))
-            separatedValues.forEach { value in
+            for value in separatedValues {
                 if let doubleValue = doubleFromString(value) {
                     dashes.append(CGFloat(doubleValue))
                 }
@@ -78,15 +64,11 @@ public class SVGHelper: NSObject {
     }
 
     static func parseTransform(_ attributes: String, transform: CGAffineTransform = CGAffineTransform.identity) -> CGAffineTransform {
-        guard let matcher = SVGParserRegexHelper.getTransformAttributeMatcher() else {
-            return transform
-        }
-
         let attributes = attributes.replacingOccurrences(of: "\n", with: "")
         var finalTransform = transform
         let fullRange = NSRange(location: 0, length: attributes.count)
 
-        guard let matchedAttribute = matcher.firstMatch(in: attributes, options: .reportCompletion, range: fullRange) else {
+        guard let matchedAttribute = SVGParserRegexHelper.transformAttributeMatcher.firstMatch(in: attributes, options: .reportCompletion, range: fullRange) else {
             return finalTransform
         }
         let attributeName = (attributes as NSString).substring(with: matchedAttribute.range(at: 1))
@@ -137,7 +119,8 @@ public class SVGHelper: NSObject {
             }
             if let a = values[0].cgFloatValue, let b = values[1].cgFloatValue,
                let c = values[2].cgFloatValue, let d = values[3].cgFloatValue,
-               let tx = values[4].cgFloatValue, let ty = values[5].cgFloatValue {
+               let tx = values[4].cgFloatValue, let ty = values[5].cgFloatValue
+            {
 
                 let transformMatrix = CGAffineTransform(a: a, b: b, c: c, d: d, tx: tx, ty: ty)
                 finalTransform = finalTransform.concatenating(transformMatrix)
@@ -152,12 +135,9 @@ public class SVGHelper: NSObject {
     }
 
     static func parseTransformValues(_ values: String, collectedValues: [String] = []) -> [String] {
-        guard let matcher = SVGParserRegexHelper.getTransformMatcher() else {
-            return collectedValues
-        }
         var updatedValues: [String] = collectedValues
         let fullRange = NSRange(location: 0, length: values.count)
-        if let matchedValue = matcher.firstMatch(in: values, options: .reportCompletion, range: fullRange) {
+        if let matchedValue = SVGParserRegexHelper.transformMatcher.firstMatch(in: values, options: .reportCompletion, range: fullRange) {
             let value = (values as NSString).substring(with: matchedValue.range)
             updatedValues.append(value)
             let rangeToRemove = NSRange(location: 0, length: matchedValue.range.location + matchedValue.range.length)
@@ -167,13 +147,4 @@ public class SVGHelper: NSObject {
         return updatedValues
     }
 
-    static func transformForNodeInRespectiveCoords(respective: SVGNode, absolute: SVGNode) -> CGAffineTransform {
-        let absoluteBounds = absolute.bounds()
-        let respectiveBounds = respective.bounds()
-        let finalSize = CGSize(width: absoluteBounds.width * respectiveBounds.width,
-                               height: absoluteBounds.height * respectiveBounds.height)
-        let scale = SVGPreserveAspectRatio(scaling: .none).layout(size: respectiveBounds.size, into: finalSize)
-        let move = CGAffineTransform(translationX: absoluteBounds.minX, y: absoluteBounds.minY)
-        return scale.concatenating(move)
-    }
 }

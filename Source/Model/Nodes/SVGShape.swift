@@ -1,14 +1,9 @@
-import SwiftUI
-import Combine
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
-public class SVGShape: SVGNode {
+public protocol SVGShape: SVGNode {
 
-    @Published public var fill: SVGPaint?
-    @Published public var stroke: SVGStroke?
+    var fill: SVGPaint? { get set }
+    var stroke: SVGStroke? { get set }
 
-    override func serialize(_ serializer: Serializer) {
-        fill?.serialize(key: "fill", serializer: serializer)
-        serializer.add("stroke", stroke)
-        super.serialize(serializer)
-    }
 }

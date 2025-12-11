@@ -1,20 +1,9 @@
-//
-//  Path.swift
-//  SVGView
-//
-//  Created by Alisa Mylnikova on 23/07/2020.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
 import SwiftUI
 
-#if os(OSX)
-import AppKit
-public typealias MBezierPath = NSBezierPath
-#else
-public typealias MBezierPath = UIBezierPath
-#endif
-
-public enum PathSegmentType {
+public enum PathSegmentType: String {
     case M
     case L
     case C
@@ -38,7 +27,7 @@ public enum PathSegmentType {
     case e
 }
 
-public class PathSegment {
+public struct PathSegment {
 
     public let type: PathSegmentType
     public let data: [CGFloat]
@@ -48,24 +37,16 @@ public class PathSegment {
         self.data = data
     }
 
-    open func isAbsolute() -> Bool {
-        switch type {
-        case .M, .L, .H, .V, .C, .S, .Q, .T, .A, .E:
-            return true
-        default:
-            return false
-        }
-    }
 }
 
-class PathReader {
+public final class PathReader {
 
     private let input: String
     private var current: UnicodeScalar?
     private var previous: UnicodeScalar?
     private var iterator: String.UnicodeScalarView.Iterator
 
-    init(input: String) {
+    public init(input: String) {
         self.input = input
         self.iterator = input.unicodeScalars.makeIterator()
     }
@@ -86,18 +67,17 @@ class PathReader {
                 return [PathSegment(type: type)]
             }
             var result = [PathSegment]()
-            let data: [CGFloat]
-            if type == .a || type == .A {
-                data = readDataOfASegment()
+            let data: [CGFloat] = if type == .a || type == .A {
+                readDataOfASegment()
             } else {
-                data = readData()
+                readData()
             }
             var index = 0
             var isFirstSegment = true
             while index < data.count {
                 let end = index + argCount
                 if end > data.count {
-                    // TODO need to generate error:
+                    // TODO: need to generate error:
                     // "Path '\(type)' has invalid number of arguments: \(data.count)"
                     break
                 }
@@ -108,7 +88,7 @@ class PathReader {
                 if type == .m && !isFirstSegment {
                     currentType = .l
                 }
-                result.append(PathSegment(type: currentType, data: Array(data[index..<end])))
+                result.append(PathSegment(type: currentType, data: Array(data[index ..< end])))
                 isFirstSegment = false
                 index = end
             }
@@ -173,7 +153,7 @@ class PathReader {
         }
     }
 
-    fileprivate func readNum() -> CGFloat? {
+    private func readNum() -> CGFloat? {
         guard let ch = current else {
             return .none
         }
@@ -196,7 +176,7 @@ class PathReader {
         return value
     }
 
-    fileprivate func readDigit(_ hasDot: inout Bool) -> UnicodeScalar? {
+    private func readDigit(_ hasDot: inout Bool) -> UnicodeScalar? {
         if let ch = readNext() {
             if (ch >= "0" && ch <= "9") || ch == "e" || (previous == "e" && ch == "-") {
                 return ch
@@ -208,9 +188,9 @@ class PathReader {
         return nil
     }
 
-    fileprivate func isNum(ch: UnicodeScalar, hasDot: inout Bool) -> Bool {
+    private func isNum(ch: UnicodeScalar, hasDot: inout Bool) -> Bool {
         switch ch {
-        case "0"..."9":
+        case "0" ... "9":
             return true
         case ".":
             if hasDot {
@@ -231,7 +211,7 @@ class PathReader {
     }
 
     private func isAcceptableSeparator(_ ch: UnicodeScalar?) -> Bool {
-        if let ch = ch {
+        if let ch {
             return "\n\r\t ,".contains(String(ch))
         }
         return false
@@ -249,7 +229,7 @@ class PathReader {
         }
     }
 
-    fileprivate func getPathSegmentType() -> PathSegmentType? {
+    private func getPathSegmentType() -> PathSegmentType? {
         if let ch = current {
             switch ch {
             case "M":
@@ -297,27 +277,27 @@ class PathReader {
         return nil
     }
 
-    fileprivate func getArgCount(segment: PathSegmentType) -> Int {
+    private func getArgCount(segment: PathSegmentType) -> Int {
         switch segment {
         case .H, .h, .V, .v:
-            return 1
+            1
         case .M, .m, .L, .l, .T, .t:
-            return 2
+            2
         case .S, .s, .Q, .q:
-            return 4
+            4
         case .C, .c:
-            return 6
+            6
         case .A, .a:
-            return 7
+            7
         default:
-            return 0
+            0
         }
     }
 }
 
-extension SVGPath {
+public extension SVGPath {
 
-    public func toBezierPath() -> MBezierPath {
+    func toBezierPath() -> Path {
 
         func calcAngle(ux: CGFloat, uy: CGFloat, vx: CGFloat, vy: CGFloat) -> CGFloat {
             let sign = copysign(1, ux * vy - uy * vx)
@@ -332,10 +312,10 @@ extension SVGPath {
         }
 
         func num2bool(_ CGFloat: CGFloat) -> Bool {
-            return CGFloat > 0.5 ? true : false
+            CGFloat > 0.5 ? true : false
         }
 
-        let bezierPath = MBezierPath()
+        var bezierPath = Path()
 
         var currentPoint: CGPoint?
         var cubicPoint: CGPoint?
@@ -404,7 +384,7 @@ extension SVGPath {
                 let endPoint = CGPoint(x: CGFloat(x) + cur.x, y: CGFloat(y) + cur.y)
                 let controlPoint1 = CGPoint(x: CGFloat(x1) + cur.x, y: CGFloat(y1) + cur.y)
                 let controlPoint2 = CGPoint(x: CGFloat(x2) + cur.x, y: CGFloat(y2) + cur.y)
-                bezierPath.addCurve(to: endPoint, controlPoint1: controlPoint1, controlPoint2: controlPoint2)
+                bezierPath.addCurve(to: endPoint, control1: controlPoint1, control2: controlPoint2)
                 setCubicPoint(endPoint, cubic: controlPoint2)
             }
         }
@@ -413,7 +393,7 @@ extension SVGPath {
             let endPoint = CGPoint(x: CGFloat(x), y: CGFloat(y))
             let controlPoint1 = CGPoint(x: CGFloat(x1), y: CGFloat(y1))
             let controlPoint2 = CGPoint(x: CGFloat(x2), y: CGFloat(y2))
-            bezierPath.addCurve(to: endPoint, controlPoint1: controlPoint1, controlPoint2: controlPoint2)
+            bezierPath.addCurve(to: endPoint, control1: controlPoint1, control2: controlPoint2)
             setCubicPoint(endPoint, cubic: controlPoint2)
         }
 
@@ -422,13 +402,12 @@ extension SVGPath {
                 let nextCubic = CGPoint(x: CGFloat(x2) + cur.x, y: CGFloat(y2) + cur.y)
                 let next = CGPoint(x: CGFloat(x) + cur.x, y: CGFloat(y) + cur.y)
 
-                var xy1: CGPoint?
-                if let curCubicVal = cubicPoint {
-                    xy1 = CGPoint(x: CGFloat(2 * cur.x) - curCubicVal.x, y: CGFloat(2 * cur.y) - curCubicVal.y)
+                let xy1 = if let curCubicVal = cubicPoint {
+                    CGPoint(x: CGFloat(2 * cur.x) - curCubicVal.x, y: CGFloat(2 * cur.y) - curCubicVal.y)
                 } else {
-                    xy1 = cur
+                    cur
                 }
-                bezierPath.addCurve(to: next, controlPoint1: xy1!, controlPoint2: nextCubic)
+                bezierPath.addCurve(to: next, control1: xy1, control2: nextCubic)
                 setCubicPoint(next, cubic: nextCubic)
             }
         }
@@ -437,13 +416,12 @@ extension SVGPath {
             if let cur = currentPoint {
                 let nextCubic = CGPoint(x: CGFloat(x2), y: CGFloat(y2))
                 let next = CGPoint(x: CGFloat(x), y: CGFloat(y))
-                var xy1: CGPoint?
-                if let curCubicVal = cubicPoint {
-                    xy1 = CGPoint(x: CGFloat(2 * cur.x) - curCubicVal.x, y: CGFloat(2 * cur.y) - curCubicVal.y)
+                let xy1 = if let curCubicVal = cubicPoint {
+                    CGPoint(x: CGFloat(2 * cur.x) - curCubicVal.x, y: CGFloat(2 * cur.y) - curCubicVal.y)
                 } else {
-                    xy1 = cur
+                    cur
                 }
-                bezierPath.addCurve(to: next, controlPoint1: xy1!, controlPoint2: nextCubic)
+                bezierPath.addCurve(to: next, control1: xy1, control2: nextCubic)
                 setCubicPoint(next, cubic: nextCubic)
             }
         }
@@ -459,35 +437,33 @@ extension SVGPath {
         func Q(_ x1: CGFloat, y1: CGFloat, x: CGFloat, y: CGFloat) {
             let endPoint = CGPoint(x: x, y: y)
             let controlPoint = CGPoint(x: x1, y: y1)
-            bezierPath.addQuadCurve(to: endPoint, controlPoint: controlPoint)
+            bezierPath.addQuadCurve(to: endPoint, control: controlPoint)
             setQuadrPoint(endPoint, quadr: controlPoint)
         }
 
         func t(_ x: CGFloat, y: CGFloat) {
             if let cur = currentPoint {
                 let next = CGPoint(x: CGFloat(x) + cur.x, y: CGFloat(y) + cur.y)
-                var quadr: CGPoint?
-                if let curQuadr = quadrPoint {
-                    quadr = CGPoint(x: 2 * cur.x - curQuadr.x, y: 2 * cur.y - curQuadr.y)
+                let quadr = if let curQuadr = quadrPoint {
+                    CGPoint(x: 2 * cur.x - curQuadr.x, y: 2 * cur.y - curQuadr.y)
                 } else {
-                    quadr = cur
+                    cur
                 }
-                bezierPath.addQuadCurve(to: next, controlPoint: quadr!)
-                setQuadrPoint(next, quadr: quadr!)
+                bezierPath.addQuadCurve(to: next, control: quadr)
+                setQuadrPoint(next, quadr: quadr)
             }
         }
 
         func T(_ x: CGFloat, y: CGFloat) {
             if let cur = currentPoint {
                 let next = CGPoint(x: CGFloat(x), y: CGFloat(y))
-                var quadr: CGPoint?
-                if let curQuadr = quadrPoint {
-                    quadr = CGPoint(x: 2 * cur.x - curQuadr.x, y: 2 * cur.y - curQuadr.y)
+                let quadr = if let curQuadr = quadrPoint {
+                    CGPoint(x: 2 * cur.x - curQuadr.x, y: 2 * cur.y - curQuadr.y)
                 } else {
-                    quadr = cur
+                    cur
                 }
-                bezierPath.addQuadCurve(to: next, controlPoint: quadr!)
-                setQuadrPoint(next, quadr: quadr!)
+                bezierPath.addQuadCurve(to: next, control: quadr)
+                setQuadrPoint(next, quadr: quadr)
             }
         }
 
@@ -557,16 +533,17 @@ extension SVGPath {
             let cx = CGFloat(x + w / 2)
             let cy = CGFloat(y + h / 2)
             if w == h && rotation == 0 {
-                bezierPath.addArc(withCenter: CGPoint(x: cx, y: cy), radius: CGFloat(w / 2), startAngle: extent, endAngle: end, clockwise: arcAngle >= 0)
+                bezierPath.addArc(center: CGPoint(x: cx, y: cy), radius: CGFloat(w / 2), startAngle: Angle(radians: extent), endAngle: Angle(radians: end), clockwise: !(arcAngle >= 0))
             } else {
                 let maxSize = CGFloat(max(w, h))
-                let path = MBezierPath(arcCenter: CGPoint.zero, radius: maxSize / 2, startAngle: extent, endAngle: end, clockwise: arcAngle >= 0)
+                var path = Path()
+                path.addArc(center: CGPoint.zero, radius: maxSize / 2, startAngle: Angle(radians: extent), endAngle: Angle(radians: end), clockwise: !(arcAngle >= 0))
 
                 var transform = CGAffineTransform(translationX: cx, y: cy)
                 transform = transform.rotated(by: CGFloat(rotation))
-                path.apply(transform.scaledBy(x: CGFloat(w) / maxSize, y: CGFloat(h) / maxSize))
+                path = path.applying(transform.scaledBy(x: CGFloat(w) / maxSize, y: CGFloat(h) / maxSize))
 
-                bezierPath.append(path)
+                bezierPath.addPath(path)
             }
         }
 
@@ -581,7 +558,7 @@ extension SVGPath {
             if let initPoint = initialPoint {
                 lineTo(initPoint)
             }
-            bezierPath.close()
+            bezierPath.closeSubpath()
         }
 
         func setQuadrPoint(_ p: CGPoint, quadr: CGPoint) {
@@ -616,24 +593,24 @@ extension SVGPath {
                 data.removeSubrange(Range(uncheckedBounds: (lower: 0, upper: 2)))
                 while data.count >= 2 {
                     L(data[0], y: data[1])
-                    data.removeSubrange((0 ..< 2))
+                    data.removeSubrange(0 ..< 2)
                 }
             case .m:
                 m(data[0], y: data[1])
-                data.removeSubrange((0 ..< 2))
+                data.removeSubrange(0 ..< 2)
                 while data.count >= 2 {
                     l(data[0], y: data[1])
-                    data.removeSubrange((0 ..< 2))
+                    data.removeSubrange(0 ..< 2)
                 }
             case .L:
                 while data.count >= 2 {
                     L(data[0], y: data[1])
-                    data.removeSubrange((0 ..< 2))
+                    data.removeSubrange(0 ..< 2)
                 }
             case .l:
                 while data.count >= 2 {
                     l(data[0], y: data[1])
-                    data.removeSubrange((0 ..< 2))
+                    data.removeSubrange(0 ..< 2)
                 }
             case .H:
                 H(data[0])
@@ -646,22 +623,22 @@ extension SVGPath {
             case .C:
                 while data.count >= 6 {
                     C(data[0], y1: data[1], x2: data[2], y2: data[3], x: data[4], y: data[5])
-                    data.removeSubrange((0 ..< 6))
+                    data.removeSubrange(0 ..< 6)
                 }
             case .c:
                 while data.count >= 6 {
                     c(data[0], y1: data[1], x2: data[2], y2: data[3], x: data[4], y: data[5])
-                    data.removeSubrange((0 ..< 6))
+                    data.removeSubrange(0 ..< 6)
                 }
             case .S:
                 while data.count >= 4 {
                     S(data[0], y2: data[1], x: data[2], y: data[3])
-                    data.removeSubrange((0 ..< 4))
+                    data.removeSubrange(0 ..< 4)
                 }
             case .s:
                 while data.count >= 4 {
                     s(data[0], y2: data[1], x: data[2], y: data[3])
-                    data.removeSubrange((0 ..< 4))
+                    data.removeSubrange(0 ..< 4)
                 }
             case .Q:
                 Q(data[0], y1: data[1], x: data[2], y: data[3])
@@ -685,6 +662,5 @@ extension SVGPath {
         }
         return bezierPath
     }
-
 
 }

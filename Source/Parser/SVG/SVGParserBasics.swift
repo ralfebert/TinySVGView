@@ -1,22 +1,14 @@
-//
-//  ColorExtension.swift
-//  SVGView
-//
-//  Created by Alisa Mylnikova on 17/07/2020.
-//
+// MIT license
+// Derived from https://github.com/exyte/SVGView
 
-import SwiftUI
+import CoreGraphics
+import Foundation
 
 extension SVGHelper {
 
-  static func parseDouble(_ attributes: [String: String], _ key: String, alternativeKeys: [String] = [], defaultValue: Double = 0) -> Double {
+    static func parseDouble(_ attributes: [String: String], _ key: String, defaultValue: Double = 0) -> Double {
         if let value = attributes[key], let result = doubleFromString(value) {
             return result
-        }
-        for alternativeKey in alternativeKeys {
-            if let value = attributes[alternativeKey], let result = doubleFromString(value) {
-                return result
-            }
         }
         return defaultValue
     }
@@ -33,82 +25,28 @@ extension SVGHelper {
             return 0
         }
 
-        let scanner = Scanner(string: string)
-        let value = scanner.scanDouble()
-        let unit = scanner.scanCharacters(from: .unitCharacters)
-
-        switch unit {
-        case nil, "px":
-            return value
-        default:
-            print("SVG parsing error. Unit \"\(unit ?? "")\" is not supported")
-            return value
-        }
+        return Double(string)
     }
 
-    static func parsePointsArray(_ string: String) -> [CGPoint] {
-        var numbers: [Double] = []
-
-        let scanner = Scanner(string: string)
-        while !scanner.isAtEnd {
-            if let value = scanner.scanDouble() {
-                numbers.append(value)
-            }
-            _ = scanner.scanCharacters(from: [","])
-        }
-
-        var points: [CGPoint] = []
-        var i = 0
-        while i < numbers.count - 1 {
-            points.append(CGPoint(x: numbers[i], y: numbers[i + 1]))
-            i += 2
-        }
-
-        return points
-    }
-
-    static func parseOpacity(_ attributes: [String: String], _ key: String, alternativeKeys: [String] = []) -> Double {
-        let opacity = parseDouble(attributes, key, alternativeKeys: alternativeKeys, defaultValue: 1)
+    static func parseOpacity(_ attributes: [String: String], _ key: String) -> Double {
+        let opacity = parseDouble(attributes, key, defaultValue: 1)
         return min(max(opacity, 0), 1)
     }
 
-    static func parseFill(_ style: [String: String], _ index: SVGIndex) -> SVGPaint? {
-        guard let colorString = style["fill"] else {
-            return SVGColor.black.opacity(parseOpacity(style, "fill-opacity", alternativeKeys: ["opacity"]))
-        }
-        return parseFillInternal(colorString, style, index)
+    static func parseFill(_ style: [String: String]) -> SVGPaint? {
+        style["fill"].map { parseColor($0).map { SVGPaint.color($0) } } ?? .none
     }
 
-    static func parseStrokeFill(_ style: [String: String], _ index: SVGIndex) -> SVGPaint? {
-        guard let colorString = style["stroke"] else {
-            return .none
-        }
-        return parseFillInternal(colorString, style, index)
+    static func parseStrokeFill(_ style: [String: String]) -> SVGPaint? {
+        style["stroke"].map { parseColor($0).map { SVGPaint.color($0) } } ?? .none
     }
 
-    static func parseFillInternal(_ colorString: String, _ style: [String: String], _ index: SVGIndex) -> SVGPaint? {
-        if let colorId = SVGHelper.parseIdFromUrl(colorString) {
-            if let paint = index.paint(by: colorId) {
-                return paint
-            }
-        }
-        if let color = parseColor(colorString, style) {
-            return color.opacity(parseOpacity(style, "fill-opacity", alternativeKeys: ["opacity"]))
-        }
-        
-        return .none
-    }
-
-    static func parseColor(_ string: String, _ style: [String: String]) -> SVGColor? {
+    static func parseColor(_ string: String) -> SVGColor? {
         let normalized = string.replacingOccurrences(of: " ", with: "")
-        if normalized == "none" || normalized == "transparent" {
+        if normalized == "none" {
             return .none
-        } else if normalized == "currentColor", let currentColor = style["color"] {
-            return parseColor(currentColor, style)
-        } else if let defaultColor = SVGColor.by(name: normalized) {
-            return defaultColor
-        } else if normalized.hasPrefix("rgb") {
-            return parseRGBNotation(colorString: normalized)
+        } else if let namedColor = SVGColor.by(name: normalized) {
+            return namedColor
         } else {
             return createColorFromHex(normalized)
         }
@@ -126,55 +64,49 @@ extension SVGHelper {
         return SVGColor(hex: cleanedHexString)
     }
 
-    static func parseRGBNotation(colorString: String) -> SVGColor {
-        let from = colorString.index(colorString.startIndex, offsetBy: 4)
-        let inPercentage = colorString.contains("%")
-        let sp = String(colorString.suffix(from: from))
-            .replacingOccurrences(of: "%", with: "")
-            .replacingOccurrences(of: ")", with: "")
-            .replacingOccurrences(of: " ", with: "")
-        let x = sp.components(separatedBy: ",")
-        var red = 0.0
-        var green = 0.0
-        var blue = 0.0
-        if x.count == 3 {
-            if let r = Double(x[0]), let g = Double(x[1]), let b = Double(x[2]) {
-                blue = b
-                green = g
-                red = r
+}
+
+extension SVGPreserveAspectRatio {
+
+    static func parsePreserveAspectRatio(string: String?) -> SVGPreserveAspectRatio {
+        if let contentModeString = string {
+            let strings = contentModeString.components(separatedBy: CharacterSet(charactersIn: " "))
+            if strings.count == 1 { // none
+                return SVGPreserveAspectRatio(scaling: parseScaling(strings[0]))
             }
+            guard strings.count == 2 else {
+                return SVGPreserveAspectRatio()
+            }
+
+            let alignString = strings[0]
+            var xAlign = alignString.prefix(4).lowercased()
+            xAlign.remove(at: xAlign.startIndex)
+            let xAligningMode = parseAlign(xAlign)
+
+            var yAlign = alignString.suffix(4).lowercased()
+            yAlign.remove(at: yAlign.startIndex)
+            let yAligningMode = parseAlign(yAlign)
+
+            let scalingMode = parseScaling(strings[1])
+            return SVGPreserveAspectRatio(scaling: scalingMode, xAlign: xAligningMode, yAlign: yAligningMode)
         }
-        if inPercentage {
-            red *= 2.55
-            green *= 2.55
-            blue *= 2.55
-        }
-        return SVGColor(r: Int(round(red)), g: Int(round(green)), b: Int(round(blue)))
+        return SVGPreserveAspectRatio()
     }
 
-    static private func parseIdFromUrl(_ urlString: String) -> String? {
-        if urlString.hasPrefix("url") {
-            return urlString.substringWithOffset(fromStart: 5, fromEnd: 1)
+    static func parseAlign(_ string: String) -> SVGPreserveAspectRatio.Align {
+        switch string {
+        case "min": .min
+        case "max": .max
+        default: .mid
         }
-        return .none
     }
 
-}
-
-fileprivate extension String {
-    func substringWithOffset(fromStart: Int, fromEnd: Int) -> String {
-        let start = index(startIndex, offsetBy: fromStart)
-        let end = index(endIndex, offsetBy: -fromEnd)
-        return String(self[start..<end])
+    static func parseScaling(_ string: String) -> SVGPreserveAspectRatio.Scaling {
+        switch string {
+        case "meet": .meet
+        case "slice": .slice
+        default: .none
+        }
     }
-}
 
-extension CharacterSet {
-    /// Latin alphabet characters.
-    static let latinAlphabet = CharacterSet(charactersIn: "a"..."z")
-        .union(CharacterSet(charactersIn: "A"..."Z"))
-
-    static let unitCharacters = CharacterSet.latinAlphabet
-
-    static let transformationAttributeCharacters = CharacterSet.latinAlphabet
 }
