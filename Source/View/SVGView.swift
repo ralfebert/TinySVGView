@@ -77,7 +77,8 @@ private extension CGContext {
 
     func draw(path: CGPath, shape: some SVGShape, fillRule: CGPathFillRule = .winding) {
 
-        if case let .color(color) = shape.fill {
+        // An outside-aligned stroke is drawn first and the fill painted on top of it.
+        if shape.stroke?.alignment != .outside, case let .color(color) = shape.fill {
             setFillColor(color.cgColor)
             addPath(path)
             fillPath(using: fillRule)
@@ -89,7 +90,18 @@ private extension CGContext {
                 setFillColor(color.cgColor)
             }
 
-            setLineWidth(stroke.width)
+            switch stroke.alignment {
+            case .center:
+                setLineWidth(stroke.width)
+            case .inside:
+                // Twice the width, with the outer half clipped away.
+                setLineWidth(stroke.width * 2)
+                addPath(path)
+                clip()
+            case .outside:
+                // Twice the width; the inner half is covered by the fill drawn on top below.
+                setLineWidth(stroke.width * 2)
+            }
 
             setLineCap(stroke.cap)
             setLineJoin(stroke.join)
@@ -102,6 +114,12 @@ private extension CGContext {
             // Applies scaleFactor in transform to the line width
             replacePathWithStrokedPath()
             fillPath()
+
+            if stroke.alignment == .outside, case let .color(color) = shape.fill {
+                setFillColor(color.cgColor)
+                addPath(path)
+                fillPath(using: fillRule)
+            }
 
         }
     }
