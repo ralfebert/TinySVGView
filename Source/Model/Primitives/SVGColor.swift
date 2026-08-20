@@ -68,8 +68,10 @@ public struct SVGColor: Equatable, Hashable {
         Double(a) / 255
     }
 
+    /// sRGB, the color space SVG colors are defined in; the generic-RGB `CGColor(red:…)` would be
+    /// color-matched into the canvas and come out shifted.
     public var cgColor: CGColor {
-        CGColor(red: CGFloat(r) / 0xFF, green: CGFloat(g) / 0xFF, blue: CGFloat(b) / 0xFF, alpha: CGFloat(opacity))
+        CGColor(srgbRed: CGFloat(r) / 0xFF, green: CGFloat(g) / 0xFF, blue: CGFloat(b) / 0xFF, alpha: CGFloat(opacity))
     }
 
     public var stringValue: String {
