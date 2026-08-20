@@ -16,8 +16,13 @@ public struct SVGColor: Equatable, Hashable {
 
     public let value: Int
 
-    public init(_ value: Int = 0) {
+    /// How the color was written in the document, e.g. "steelblue", "#333" or "#fdf6e3". Colors
+    /// created in code don't have one and are written out as a hex value or a color name.
+    public let literal: String?
+
+    public init(_ value: Int = 0, literal: String? = nil) {
         self.value = value
+        self.literal = literal
     }
 
     public init(r: Int, g: Int, b: Int, t: Int = 0) {
@@ -32,11 +37,11 @@ public struct SVGColor: Equatable, Hashable {
         self.init(r: r, g: g, b: b, t: Int((1 - opacity) * 255))
     }
 
-    public init(hex: String) {
+    public init(hex: String, literal: String? = nil) {
         let scanner = Scanner(string: hex)
         var rgbValue: UInt64 = 0
         scanner.scanHexInt64(&rgbValue)
-        self.init(Int(rgbValue))
+        self.init(Int(rgbValue), literal: literal)
     }
 
     public var r: Int {
@@ -63,11 +68,20 @@ public struct SVGColor: Equatable, Hashable {
         Double(a) / 255
     }
 
+    public var cgColor: CGColor {
+        CGColor(red: CGFloat(r) / 0xFF, green: CGFloat(g) / 0xFF, blue: CGFloat(b) / 0xFF, alpha: CGFloat(opacity))
+    }
+
     public var stringValue: String {
-        SVGNamedColors.name(forColor: value) ?? "#" + String(format: "%02X%02X%02X", r, g, b)
+        literal ?? SVGNamedColors.name(forColor: value) ?? "#" + String(format: "%02X%02X%02X", r, g, b)
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(value)
     }
 }
 
+/// The spelling is not part of the identity of a color.
 public func == (lhs: SVGColor, rhs: SVGColor) -> Bool {
     lhs.value == rhs.value
 }
@@ -75,7 +89,7 @@ public func == (lhs: SVGColor, rhs: SVGColor) -> Bool {
 final class SVGNamedColors {
 
     static func color(forName name: String) -> SVGColor? {
-        instance.hexByText[name].map { SVGColor($0) }
+        instance.hexByText[name].map { SVGColor($0, literal: name) }
     }
 
     static func name(forColor hex: Int) -> String? {

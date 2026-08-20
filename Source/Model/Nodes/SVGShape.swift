@@ -3,7 +3,7 @@
 
 public protocol SVGShape: SVGNode {
 
-    var fill: SVGPaint? { get set }
+    var fill: SVGPaint { get set }
     var stroke: SVGStroke? { get set }
 
 }

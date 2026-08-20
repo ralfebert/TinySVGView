@@ -6,13 +6,15 @@ import Foundation
 
 public enum SVGHelper {
 
+    /// A stroke is only created for an explicit `stroke` color; `stroke="none"` and a missing
+    /// `stroke` both mean the shape isn't stroked.
     static func parseStroke(_ style: [String: String]) -> SVGStroke? {
-        guard let fill = SVGHelper.parseStrokeFill(style) else {
+        guard case let .color(color) = parsePaint(style, "stroke") else {
             return .none
         }
 
         return SVGStroke(
-            fill: fill,
+            fill: .color(color),
             width: parseCGFloat(style, "stroke-width", defaultValue: 1),
             cap: getStrokeCap(style),
             join: getStrokeJoin(style),
@@ -23,16 +25,10 @@ public enum SVGHelper {
     }
 
     static func getStrokeDashes(_ style: [String: String]) -> [CGFloat] {
-        var dashes = [CGFloat]()
-        if let strokeDashes = style["stroke-dasharray"] {
-            let separatedValues = strokeDashes.components(separatedBy: CharacterSet(charactersIn: " ,"))
-            for value in separatedValues {
-                if let doubleValue = doubleFromString(value) {
-                    dashes.append(CGFloat(doubleValue))
-                }
-            }
+        guard let dashes = style["stroke-dasharray"] else {
+            return []
         }
-        return dashes
+        return dashes.components(separatedBy: CharacterSet(charactersIn: " ,")).compactMap { SVGLength(parsing: $0)?.value }
     }
 
     static func getStrokeCap(_ style: [String: String]) -> CGLineCap {

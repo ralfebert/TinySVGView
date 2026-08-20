@@ -3,21 +3,37 @@
 import PackageDescription
 
 let package = Package(
-    name: "SVGView",
+    name: "TinySVGView",
     platforms: [
         .iOS(.v15), .macOS(.v14),
     ],
     products: [
         .library(
-            name: "SVGView",
-            targets: ["SVGView"]
+            name: "TinySVGView",
+            targets: ["TinySVGView"]
         ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/CoreOffice/XMLCoder", from: "0.17.1"),
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
     ],
     targets: [
         .target(
-            name: "SVGView",
+            name: "TinySVGView",
+            dependencies: [
+                .product(name: "XMLCoder", package: "XMLCoder"),
+            ],
             path: "Source",
             exclude: ["Info.plist"]
+        ),
+        .testTarget(
+            name: "TinySVGViewTests",
+            dependencies: [
+                "TinySVGView",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ],
+            exclude: ["__Snapshots__"],
+            resources: [.copy("sample.svg"), .copy("shapes.svg")]
         ),
     ],
     swiftLanguageVersions: [.v5]

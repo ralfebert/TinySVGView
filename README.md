@@ -1,8 +1,72 @@
-# SVGView 
+# TinySVGView
 
-Stripped-down version of [exyte/SVGView](https://github.com/exyte/SVGView)
+A SVG parser, document model and SwiftUI Canvas view for a minimal subset of SVG.
 
-Changes:
-- Using structs instead of classes for the document model
-- CGContext renderer (for my limited feature set) instead of using SwiftUI shapes. I started this out of curiosity, I wanted to try the „render async“ feature of the SwiftUI Canvas. It didn’t make a big difference, but I kept it anyway. Not sure if one approach is better than the other, I should play around with the use case of making parts animated or interactive first - the SwiftUI shapes might be more useful here, and might be good enough for other use cases as well.
-- Removed many features that were not needed my project - not sure if there is a value of a smaller "vector path data format only" fork
+```swift
+import TinySVGView
+
+SVGView(contentsOf: Bundle.main.url(forResource: "drawing", withExtension: "svg")!)
+```
+
+The parsed document is a plain value tree you can inspect, modify and write back:
+
+```swift
+var svg = SVGParser.parse(contentsOf: url) as! SVGViewport
+svg.contents.append(SVGRect(x: 0, y: 0, width: 10, height: 10))
+try svg.xmlString()   // -> <svg xmlns="http://www.w3.org/2000/svg" …
+SVGView(svg: svg)
+```
+
+
+
+## Supported feature set
+
+| Element | Attributes |
+| --- | --- |
+| *every element* | `id`, `opacity`, `transform` (`translate`, `scale`, `rotate`, `skewX`, `skewY`, `matrix`) |
+| *shapes and text* | `fill` and `stroke` (named CSS colors, `#rgb`, `#rrggbb`, `none`), `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset` |
+| `<svg>` | `width`, `height`, `preserveAspectRatio` |
+| `<g>` | – |
+| `<path>` | `d` (`M L H V C S Q T A Z`, absolute and relative), `fill-rule` |
+| `<rect>` | `x`, `y`, `width`, `height`, `rx`, `ry` |
+| `<circle>` | `cx`, `cy`, `r` |
+| `<ellipse>` | `cx`, `cy`, `rx`, `ry` |
+| `<line>` | `x1`, `y1`, `x2`, `y2` |
+| `<polyline>`, `<polygon>` | `points`, `fill-rule` |
+| `<text>` | `x`, `y`, `font-family`, `font-size`, `font-weight`, `font-style`, `text-anchor` |
+
+
+- **Struct-based document model**: easy to build and manipulate in code.
+
+- **Rendered into a single SwiftUI `Canvas`** via `CGContext`, can render asynchronously.
+
+- **Reads and writes SVG**, using [XMLCoder](https://github.com/CoreOffice/XMLCoder) — the model types are `Codable`.
+
+- **~2.500 lines of code**, easy to read and extend.
+
+  
+
+Not supported:
+
+* Everything else, most notably: `viewBox`, `<tspan>`, `<use>`/`<defs>`, `<image>`, gradients, clip paths, masks, filters, CSS (`style` attributes and stylesheets), animation.
+* SwiftUI shape-based rendering (could be brought back from the exyte/SVGView project)
+
+
+
+## Notes
+
+This is a fork from [exyte/SVGView](https://github.com/exyte/SVGView).
+
+
+
+## Development
+
+```
+just test-macos   # swift test on macOS
+just test-ios     # xcodebuild test on the iOS simulator
+just format
+
+# re-record snapshot references with:
+SNAPSHOT_TESTING_RECORD=all just test-macos
+```
+

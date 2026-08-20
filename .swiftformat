@@ -1,0 +1,3 @@
+--swiftversion 5.10
+--disable preferForLoop,unusedArguments,blankLinesAtStartOfScope,blankLinesAtEndOfScope,andOperator,redundantSelf,redundantStaticSelf,redundantInternal,preferKeyPath,redundantLet,swiftTestingTestCaseNames,trailingClosures,redundantVariable,redundantViewBuilder
+--header "MIT license\nDerived from https://github.com/exyte/SVGView"

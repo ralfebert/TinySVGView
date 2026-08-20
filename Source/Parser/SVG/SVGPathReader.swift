@@ -10,6 +10,7 @@ public enum PathSegmentType: String {
     case Q
     case A
     case z
+    case Z
     case H
     case V
     case S
@@ -252,8 +253,10 @@ public final class PathReader {
                 return .A
             case "a":
                 return .a
-            case "z", "Z":
+            case "z":
                 return .z
+            case "Z":
+                return .Z
             case "H":
                 return .H
             case "h":
@@ -656,7 +659,7 @@ public extension SVGPath {
                 E(data[0], y: data[1], w: data[2], h: data[3], startAngle: data[4], arcAngle: data[5])
             case .e:
                 e(data[0], y: data[1], w: data[2], h: data[3], startAngle: data[4], arcAngle: data[5])
-            case .z:
+            case .z, .Z:
                 Z()
             }
         }

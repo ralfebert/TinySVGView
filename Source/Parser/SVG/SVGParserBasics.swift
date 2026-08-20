@@ -13,11 +13,14 @@ extension SVGHelper {
         return defaultValue
     }
 
+    /// A length attribute. A unit is converted to user units, e.g. `stroke-width="1.5pt"` reads as 2.
     static func parseCGFloat(_ attributes: [String: String], _ key: String, defaultValue: CGFloat = 0) -> CGFloat {
-        if let value = attributes[key], let result = doubleFromString(value) {
-            return CGFloat(result)
-        }
-        return defaultValue
+        attributes[key].flatMap { SVGLength(parsing: $0) }?.value ?? defaultValue
+    }
+
+    /// The one length that keeps its unit, so that `font-size="12pt"` is written back as `12pt`.
+    static func parseFontSize(_ attributes: [String: String], defaultValue: SVGLength) -> SVGLength {
+        attributes["font-size"].flatMap { SVGLength(parsing: $0) } ?? defaultValue
     }
 
     static func doubleFromString(_ string: String) -> Double? {
@@ -33,12 +36,23 @@ extension SVGHelper {
         return min(max(opacity, 0), 1)
     }
 
-    static func parseFill(_ style: [String: String]) -> SVGPaint? {
-        style["fill"].map { parseColor($0).map { SVGPaint.color($0) } } ?? .none
+    static func parseFillRule(_ attributes: [String: String]) -> CGPathFillRule {
+        attributes["fill-rule"] == "evenodd" ? .evenOdd : .winding
     }
 
-    static func parseStrokeFill(_ style: [String: String]) -> SVGPaint? {
-        style["stroke"].map { parseColor($0).map { SVGPaint.color($0) } } ?? .none
+    /// The `points` of a polyline or polygon, e.g. "60 110, 65 120".
+    static func parsePoints(_ attributes: [String: String]) -> [CGPoint] {
+        let numbers = (attributes["points"] ?? "")
+            .components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ",")))
+            .compactMap { Double($0) }
+        return stride(from: 0, to: numbers.count - 1, by: 2).map { CGPoint(x: numbers[$0], y: numbers[$0 + 1]) }
+    }
+
+    static func parsePaint(_ style: [String: String], _ key: String) -> SVGPaint {
+        guard let value = style[key] else {
+            return .unspecified
+        }
+        return parseColor(value).map { SVGPaint.color($0) } ?? SVGPaint.none
     }
 
     static func parseColor(_ string: String) -> SVGColor? {
@@ -61,7 +75,7 @@ extension SVGHelper {
             let x = Array(cleanedHexString)
             cleanedHexString = "\(x[0])\(x[0])\(x[1])\(x[1])\(x[2])\(x[2])"
         }
-        return SVGColor(hex: cleanedHexString)
+        return SVGColor(hex: cleanedHexString, literal: hexString)
     }
 
 }

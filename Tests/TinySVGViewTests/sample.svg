@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" preserveAspectRatio="xMinYMid meet">
+    <title>unsupported elements are skipped without losing their siblings</title>
+    <rect width="240" height="160" fill="#fdf6e3"/>
+    <g id="shapes" transform="translate(10,10)">
+        <rect width="60" height="40" rx="8" ry="8" fill="steelblue" stroke="navy" stroke-width="3"/>
+        <rect x="80" width="60" height="40" fill="none" stroke="crimson" stroke-width="4" stroke-dasharray="8 4" stroke-dashoffset="2" stroke-linecap="round"/>
+        <path d="M150 0 L210 0 L180 40 Z" fill="#7fc41e" opacity="0.6"/>
+        <image x="0" y="0" width="10" height="10" href="unsupported.png"/>
+    </g>
+    <g transform="rotate(-8 20 90)" opacity="0.9">
+        <path d="M20 90 C 60 50, 100 130, 140 90 S 200 50, 220 90" fill="none" stroke="#333" stroke-width="3" stroke-linecap="square" stroke-linejoin="round"/>
+    </g>
+    <path d="M40 130 h60 v20 h-60 z M55 136 h30 v8 h-30 z" fill-rule="evenodd" fill="darkorange"/>
+    <text x="120" y="152" font-family="Helvetica" font-size="12pt" font-weight="bold" text-anchor="middle" fill="#204060">SVGView</text>
+    <text x="236" y="152" font-family="Times" font-size="11" font-weight="300" font-style="italic" text-anchor="end">italic</text>
+</svg>
