@@ -60,7 +60,7 @@ public enum SVGHelper {
     }
 
     static func parseTransform(_ attributes: String, transform: CGAffineTransform = CGAffineTransform.identity) -> CGAffineTransform {
-        let attributes = attributes.replacingOccurrences(of: "\n", with: "")
+        let attributes = attributes.replacing("\n", with: "")
         var finalTransform = transform
         let fullRange = NSRange(location: 0, length: attributes.count)
 

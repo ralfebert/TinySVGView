@@ -56,7 +56,7 @@ extension SVGHelper {
     }
 
     static func parseColor(_ string: String) -> SVGColor? {
-        let normalized = string.replacingOccurrences(of: " ", with: "")
+        let normalized = string.replacing(" ", with: "")
         if normalized == "none" {
             return .none
         } else if let namedColor = SVGColor.by(name: normalized) {
@@ -69,7 +69,7 @@ extension SVGHelper {
     static func createColorFromHex(_ hexString: String) -> SVGColor {
         var cleanedHexString = hexString
         if hexString.hasPrefix("#") {
-            cleanedHexString = hexString.replacingOccurrences(of: "#", with: "")
+            cleanedHexString = hexString.replacing("#", with: "")
         }
         if cleanedHexString.count == 3 {
             let x = Array(cleanedHexString)
