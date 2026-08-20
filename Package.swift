@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "TinySVGView",
     platforms: [
-        .iOS(.v15), .macOS(.v14),
+        .iOS(.v16), .macOS(.v14),
     ],
     products: [
         .library(
