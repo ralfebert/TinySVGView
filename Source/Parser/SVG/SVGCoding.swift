@@ -62,8 +62,10 @@ struct SVGElementKey: XMLChoiceCodingKey {
     static let polyline = SVGElementKey("polyline")
     static let polygon = SVGElementKey("polygon")
     static let text = SVGElementKey("text")
+    static let defs = SVGElementKey("defs")
+    static let use = SVGElementKey("use")
 
-    static let all = [g, path, rect, circle, ellipse, line, polyline, polygon, text]
+    static let all = [g, path, rect, circle, ellipse, line, polyline, polygon, text, defs, use]
 
     /// The keys that are written as child elements rather than as attributes; the empty key is the
     /// text content of `<text>`.
@@ -83,6 +85,8 @@ enum SVGElement {
     case polyline(SVGPolyline)
     case polygon(SVGPolygon)
     case text(SVGText)
+    case defs(SVGDefs)
+    case use(SVGUse)
     /// An element TinySVGView doesn't support; kept so the surrounding siblings still decode.
     case unsupported(String)
 
@@ -97,6 +101,8 @@ enum SVGElement {
         case let node as SVGPolyline: self = .polyline(node)
         case let node as SVGPolygon: self = .polygon(node)
         case let node as SVGText: self = .text(node)
+        case let node as SVGDefs: self = .defs(node)
+        case let node as SVGUse: self = .use(node)
         default: return nil
         }
     }
@@ -112,6 +118,8 @@ enum SVGElement {
         case let .polyline(node): node
         case let .polygon(node): node
         case let .text(node): node
+        case let .defs(node): node
+        case let .use(node): node
         case .unsupported: nil
         }
     }
@@ -143,6 +151,10 @@ extension SVGElement: Codable {
             self = try .polygon(container.decode(SVGPolygon.self, forKey: .polygon))
         case SVGElementKey.text.stringValue:
             self = try .text(container.decode(SVGText.self, forKey: .text))
+        case SVGElementKey.defs.stringValue:
+            self = try .defs(container.decode(SVGDefs.self, forKey: .defs))
+        case SVGElementKey.use.stringValue:
+            self = try .use(container.decode(SVGUse.self, forKey: .use))
         case let name:
             self = .unsupported(name ?? "")
             decoder.svgLogger.log(message: "Skipping unsupported element: \(name ?? "")")
@@ -161,6 +173,8 @@ extension SVGElement: Codable {
         case let .polyline(node): try container.encode(node, forKey: .polyline)
         case let .polygon(node): try container.encode(node, forKey: .polygon)
         case let .text(node): try container.encode(node, forKey: .text)
+        case let .defs(node): try container.encode(node, forKey: .defs)
+        case let .use(node): try container.encode(node, forKey: .use)
         case .unsupported: break
         }
     }
@@ -271,6 +285,20 @@ extension SVGShape {
 
 }
 
+private extension SVGNode {
+
+    var containsUse: Bool {
+        if self is SVGUse {
+            return true
+        }
+        if let container = self as? SVGNodeContainer {
+            return container.contents.contains { $0.containsUse }
+        }
+        return false
+    }
+
+}
+
 private extension SVGNodeContainer {
 
     func encodeContents(to encoder: Encoder) throws {
@@ -302,6 +330,9 @@ extension SVGViewport: Codable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: SVGCodingKey.self)
         try container.encode("http://www.w3.org/2000/svg", forKey: SVGCodingKey("xmlns"))
+        if containsUse {
+            try container.encode("http://www.w3.org/1999/xlink", forKey: SVGCodingKey("xmlns:xlink"))
+        }
         try container.encode(width.svgString, forKey: SVGCodingKey("width"))
         try container.encode(height.svgString, forKey: SVGCodingKey("height"))
         if preserveAspectRatio != SVGPreserveAspectRatio() {
@@ -324,6 +355,38 @@ extension SVGGroup: Codable {
         var container = encoder.container(keyedBy: SVGCodingKey.self)
         try encodeBasicAttributes(to: &container)
         try encodeContents(to: encoder)
+    }
+
+}
+
+extension SVGDefs: Codable {
+
+    public init(from decoder: Decoder) throws {
+        try self.init(contents: decoder.svgContents())
+        try decodeBasicAttributes(decoder.svgAttributes())
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: SVGCodingKey.self)
+        try encodeBasicAttributes(to: &container)
+        try encodeContents(to: encoder)
+    }
+
+}
+
+extension SVGUse: Codable {
+
+    public init(from decoder: Decoder) throws {
+        let attributes = try decoder.svgAttributes()
+        let href = attributes["xlink:href"] ?? attributes["href"] ?? ""
+        self.init(href: href.hasPrefix("#") ? String(href.dropFirst()) : href)
+        decodeBasicAttributes(attributes)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: SVGCodingKey.self)
+        try container.encode("#\(href)", forKey: SVGCodingKey("xlink:href"))
+        try encodeBasicAttributes(to: &container)
     }
 
 }

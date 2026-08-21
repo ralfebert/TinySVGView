@@ -32,6 +32,17 @@ public struct SVGView: View {
 public extension SVGNode {
 
     func draw(ctx: CGContext, size: CGSize) {
+        draw(ctx: ctx, size: size, ids: nodesById(), pendingUses: [])
+    }
+
+}
+
+private extension SVGNode {
+
+    /// - Parameters:
+    ///   - ids: all nodes of the document that carry an id, to resolve `SVGUse` references against.
+    ///   - pendingUses: the hrefs currently being drawn, to stop `<use>` cycles.
+    func draw(ctx: CGContext, size: CGSize, ids: [String: SVGNode], pendingUses: Set<String>) {
 
         ctx.saveGState()
         defer {
@@ -47,9 +58,9 @@ public extension SVGNode {
 
         switch self {
         case let node as SVGViewport:
-            node.drawContents(ctx: ctx, size: size)
+            node.drawContents(ctx: ctx, size: size, ids: ids, pendingUses: pendingUses)
         case let node as SVGGroup:
-            node.drawContents(ctx: ctx, size: size)
+            node.drawContents(ctx: ctx, size: size, ids: ids, pendingUses: pendingUses)
         case let node as SVGPath:
             ctx.draw(path: node.toBezierPath().cgPath, shape: node, fillRule: node.fillRule)
         case let node as SVGRect:
@@ -66,6 +77,12 @@ public extension SVGNode {
             ctx.draw(path: node.toPath(), shape: node, fillRule: node.fillRule)
         case let node as SVGText:
             ctx.draw(text: node)
+        case is SVGDefs:
+            break
+        case let node as SVGUse:
+            if !pendingUses.contains(node.href) {
+                ids[node.href]?.draw(ctx: ctx, size: size, ids: ids, pendingUses: pendingUses.union([node.href]))
+            }
         default:
             fatalError("Unknown SVGNode type: \(self)")
         }
@@ -135,9 +152,9 @@ private extension CGContext {
 
 private extension SVGNodeContainer {
 
-    func drawContents(ctx: CGContext, size: CGSize) {
+    func drawContents(ctx: CGContext, size: CGSize, ids: [String: SVGNode], pendingUses: Set<String>) {
         for node in self.contents {
-            node.draw(ctx: ctx, size: size)
+            node.draw(ctx: ctx, size: size, ids: ids, pendingUses: pendingUses)
         }
     }
 

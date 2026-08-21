@@ -28,4 +28,24 @@ public extension SVGNode {
         }
         return .none
     }
+
+    /// Every node in the tree that carries an id, keyed by it; the first one wins on duplicates.
+    func nodesById() -> [String: SVGNode] {
+        var ids = [String: SVGNode]()
+        collectNodesById(into: &ids)
+        return ids
+    }
+}
+
+private extension SVGNode {
+    func collectNodesById(into ids: inout [String: SVGNode]) {
+        if let id, ids[id] == nil {
+            ids[id] = self
+        }
+        if let container = self as? SVGNodeContainer {
+            for node in container.contents {
+                node.collectNodesById(into: &ids)
+            }
+        }
+    }
 }

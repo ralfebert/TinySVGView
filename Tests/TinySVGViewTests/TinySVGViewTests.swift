@@ -8,6 +8,7 @@ import ImageIO
 import SnapshotTesting
 import Testing
 @testable import TinySVGView
+import WebColor
 
 private func parse(_ name: String) throws -> SVGViewport {
     let url = try #require(Bundle.module.url(forResource: name, withExtension: "svg"))
@@ -45,6 +46,33 @@ private func sampleSVG() throws -> SVGViewport {
 
 @Test func writesBasicShapes() throws {
     try assertSnapshot(of: parse("shapes").xmlString(), as: .svg, named: "shapes")
+}
+
+/// `<use>` draws the referenced `<defs>` content at the use's transform; the defs themselves stay
+/// invisible. The reference is looked up while drawing and survives the write/parse round trip.
+@Test func rendersUseReferencingDefs() throws {
+    let document = """
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="60" height="30">
+       <defs>
+          <g id="dot"><circle cx="0" cy="0" r="5" fill="black" /></g>
+       </defs>
+       <use xlink:href="#dot" transform="translate(10,15)" />
+       <use xlink:href="#dot" transform="translate(40,15) scale(2,2)" />
+    </svg>
+    """
+    let svg = try #require(SVGParser.parse(string: document) as? SVGViewport)
+
+    let uses = svg.contents.compactMap { $0 as? SVGUse }
+    #expect(uses.count == 2)
+    #expect(uses.map(\.href) == ["dot", "dot"])
+
+    let smallDot = SVGCircle(cx: 10, cy: 15, r: 5, fill: .color(WrittenWebColor(.black)))
+    let bigDot = SVGCircle(cx: 40, cy: 15, r: 10, fill: .color(WrittenWebColor(.black)))
+    let reference = SVGViewport(width: 60, height: 30, contents: [smallDot, bigDot])
+    #expect(pngData(of: svg) == pngData(of: reference))
+
+    let rewritten = try #require(try SVGParser.parse(string: svg.xmlString()) as? SVGViewport)
+    #expect(pngData(of: rewritten) == pngData(of: svg))
 }
 
 @Test func picksTheFaceForWeightAndStyle() {
