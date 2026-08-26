@@ -66,8 +66,8 @@ private func sampleSVG() throws -> SVGViewport {
     #expect(uses.count == 2)
     #expect(uses.map(\.href) == ["dot", "dot"])
 
-    let smallDot = SVGCircle(cx: 10, cy: 15, r: 5, fill: .color(WrittenWebColor(.black)))
-    let bigDot = SVGCircle(cx: 40, cy: 15, r: 10, fill: .color(WrittenWebColor(.black)))
+    let smallDot = SVGCircle(cx: 10, cy: 15, r: 5, fill: .color(.black))
+    let bigDot = SVGCircle(cx: 40, cy: 15, r: 10, fill: .color(.black))
     let reference = SVGViewport(width: 60, height: 30, contents: [smallDot, bigDot])
     #expect(pngData(of: svg) == pngData(of: reference))
 

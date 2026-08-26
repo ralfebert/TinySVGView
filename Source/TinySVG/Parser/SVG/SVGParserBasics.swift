@@ -53,7 +53,7 @@ extension SVGHelper {
         guard let value = style[key] else {
             return .unspecified
         }
-        return parseColor(value).map { SVGPaint.color($0) } ?? SVGPaint.none
+        return parseColor(value).map { SVGPaint.color($0) } ?? SVGPaint.noPaint
     }
 
     static func parseColor(_ string: String) -> WrittenWebColor? {

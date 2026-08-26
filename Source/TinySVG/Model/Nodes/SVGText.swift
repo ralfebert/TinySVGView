@@ -38,20 +38,11 @@ public struct SVGText: SVGShape {
         self.opacity = opacity
     }
 
-    /// Unlike a shape, text without a `fill` attribute is filled black.
-    public var fillColor: WebColor? {
-        switch fill {
-        case .unspecified: .black
-        case .none: nil
-        case let .color(color): color.color
-        }
-    }
-
     public func makeLine() -> CTLine {
         var attributes: [NSAttributedString.Key: Any] = [
             kCTFontAttributeName as NSAttributedString.Key: font.ctFont,
         ]
-        if let color = fillColor {
+        if let color = fill.paintColor {
             attributes[kCTForegroundColorAttributeName as NSAttributedString.Key] = color.cgColor
         }
         return CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))

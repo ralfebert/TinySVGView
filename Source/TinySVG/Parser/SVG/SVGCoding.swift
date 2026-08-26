@@ -251,7 +251,7 @@ extension SVGShape {
         switch fill {
         case .unspecified:
             break
-        case .none:
+        case .noPaint:
             try container.encode("none", forKey: SVGCodingKey("fill"))
         case let .color(color):
             try container.encode(color.description, forKey: SVGCodingKey("fill"))

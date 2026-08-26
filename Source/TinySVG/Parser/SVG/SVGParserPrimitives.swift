@@ -10,7 +10,7 @@ public enum SVGHelper {
     /// `stroke` both mean the shape isn't stroked.
     static func parseStroke(_ style: [String: String]) -> SVGStroke? {
         guard case let .color(color) = parsePaint(style, "stroke") else {
-            return .none
+            return nil
         }
 
         return SVGStroke(

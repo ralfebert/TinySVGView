@@ -96,16 +96,16 @@ private extension CGContext {
 
     func draw(path: CGPath, shape: some SVGShape, fillRule: CGPathFillRule = .winding) {
 
-        if case let .color(color) = shape.fill {
-            setFillColor(color.color.cgColor)
+        if let color = shape.fill.paintColor {
+            setFillColor(color.cgColor)
             addPath(path)
             fillPath(using: fillRule)
         }
 
         if let stroke = shape.stroke {
 
-            if case let .color(color) = stroke.fill {
-                setFillColor(color.color.cgColor)
+            if let color = stroke.fill.paintColor {
+                setFillColor(color.cgColor)
             }
 
             setLineWidth(stroke.width)
@@ -141,10 +141,10 @@ private extension CGContext {
         translateBy(x: text.x + text.anchorOffset(of: line), y: text.y)
         scaleBy(x: 1, y: -1)
 
-        if let stroke = text.stroke, case let .color(color) = stroke.fill {
-            setStrokeColor(color.color.cgColor)
+        if let stroke = text.stroke, let color = stroke.fill.paintColor {
+            setStrokeColor(color.cgColor)
             setLineWidth(stroke.width)
-            setTextDrawingMode(text.fillColor == nil ? .stroke : .fillStroke)
+            setTextDrawingMode(text.fill.paintColor == nil ? .stroke : .fillStroke)
         }
         CTLineDraw(line, self)
     }
