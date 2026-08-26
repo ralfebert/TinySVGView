@@ -28,7 +28,8 @@ SVGView(svg: svg)
 | *every element* | `id`, `opacity`, `transform` (`translate`, `scale`, `rotate`, `skewX`, `skewY`, `matrix`) |
 | *shapes and text* | `fill` and `stroke` (named CSS colors, `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `none`), `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset` |
 | `<svg>` | `width`, `height`, `preserveAspectRatio` |
-| `<g>` | – |
+| `<g>`, `<defs>` | – |
+| `<use>` | `href`, `xlink:href` (resolved while drawing) |
 | `<path>` | `d` (`M L H V C S Q T A Z`, absolute and relative), `fill-rule` |
 | `<rect>` | `x`, `y`, `width`, `height`, `rx`, `ry` |
 | `<circle>` | `cx`, `cy`, `r` |
@@ -50,7 +51,7 @@ SVGView(svg: svg)
 
 Not supported:
 
-* Everything else, most notably: `viewBox`, `<tspan>`, `<use>`/`<defs>`, `<image>`, gradients, clip paths, masks, filters, CSS (`style` attributes and stylesheets), animation.
+* Everything else, most notably: `viewBox`, `<tspan>`, `<image>`, gradients, clip paths, masks, filters, CSS (`style` attributes and stylesheets), animation.
 * SwiftUI shape-based rendering (could be brought back from the exyte/SVGView project)
 
 
