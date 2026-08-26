@@ -2,8 +2,6 @@
 
 A SVG parser, document model and SwiftUI Canvas view for a minimal subset of SVG.
 
-The package has two products: `TinySVG` (parser and document model only) and `TinySVGView` (the SwiftUI view, re-exports `TinySVG`).
-
 ```swift
 import TinySVGView
 
@@ -13,6 +11,8 @@ SVGView(contentsOf: Bundle.main.url(forResource: "drawing", withExtension: "svg"
 The parsed document is a plain value tree you can inspect, modify and write back:
 
 ```swift
+import TinySVG
+
 var svg = SVGParser.parse(contentsOf: url) as! SVGViewport
 svg.contents.append(SVGRect(x: 0, y: 0, width: 10, height: 10))
 try svg.xmlString()   // -> <svg xmlns="http://www.w3.org/2000/svg" …
