@@ -1,6 +1,8 @@
-# TinySVGView
+# TinySVG
 
 A SVG parser, document model and SwiftUI Canvas view for a minimal subset of SVG.
+
+The package has two products: `TinySVG` (parser and document model only) and `TinySVGView` (the SwiftUI view, re-exports `TinySVG`).
 
 ```swift
 import TinySVGView

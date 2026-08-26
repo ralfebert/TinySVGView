@@ -3,11 +3,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "TinySVGView",
+    name: "TinySVG",
     platforms: [
         .iOS(.v16), .macOS(.v14),
     ],
     products: [
+        .library(
+            name: "TinySVG",
+            targets: ["TinySVG"]
+        ),
         .library(
             name: "TinySVGView",
             targets: ["TinySVGView"]
@@ -20,13 +24,17 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "TinySVGView",
+            name: "TinySVG",
             dependencies: [
                 .product(name: "XMLCoder", package: "XMLCoder"),
                 .product(name: "WebColor", package: "WebColor"),
             ],
-            path: "Source",
-            exclude: ["Info.plist"]
+            path: "Source/TinySVG"
+        ),
+        .target(
+            name: "TinySVGView",
+            dependencies: ["TinySVG"],
+            path: "Source/TinySVGView"
         ),
         .testTarget(
             name: "TinySVGViewTests",

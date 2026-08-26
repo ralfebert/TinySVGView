@@ -3,6 +3,7 @@
 
 import CoreText
 import SwiftUI
+@_exported import TinySVG
 import WebColor
 
 public struct SVGView: View {
