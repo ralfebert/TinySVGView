@@ -24,7 +24,7 @@ SVGView(svg: svg)
 | Element | Attributes |
 | --- | --- |
 | *every element* | `id`, `opacity`, `transform` (`translate`, `scale`, `rotate`, `skewX`, `skewY`, `matrix`) |
-| *shapes and text* | `fill` and `stroke` (named CSS colors, `#rgb`, `#rrggbb`, `none`), `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset` |
+| *shapes and text* | `fill` and `stroke` (named CSS colors, `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `none`), `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset` |
 | `<svg>` | `width`, `height`, `preserveAspectRatio` |
 | `<g>` | – |
 | `<path>` | `d` (`M L H V C S Q T A Z`, absolute and relative), `fill-rule` |

@@ -3,19 +3,13 @@
 
 import CoreText
 import Foundation
+import WebColor
 
 public struct SVGText: SVGShape {
 
     public enum Anchor: String {
         case start, middle, end
     }
-
-    public var transform: CGAffineTransform = .identity
-    public var opacity: Double = 1
-    public var id: String?
-
-    public var fill: SVGPaint = .unspecified
-    public var stroke: SVGStroke?
 
     public var text: String
     public var font: SVGFont
@@ -24,20 +18,32 @@ public struct SVGText: SVGShape {
     public var x: CGFloat
     public var y: CGFloat
 
-    public init(text: String = "", font: SVGFont = SVGFont(), anchor: Anchor = .start, x: CGFloat = 0, y: CGFloat = 0) {
+    public var fill: SVGPaint
+    public var stroke: SVGStroke?
+
+    public var id: String?
+    public var transform: CGAffineTransform
+    public var opacity: Double
+
+    public init(text: String = "", font: SVGFont = SVGFont(), anchor: Anchor = .start, x: CGFloat = 0, y: CGFloat = 0, fill: SVGPaint = .unspecified, stroke: SVGStroke? = nil, id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
         self.text = text
         self.font = font
         self.anchor = anchor
         self.x = x
         self.y = y
+        self.fill = fill
+        self.stroke = stroke
+        self.id = id
+        self.transform = transform
+        self.opacity = opacity
     }
 
     /// Unlike a shape, text without a `fill` attribute is filled black.
-    public var fillColor: SVGColor? {
+    public var fillColor: WebColor? {
         switch fill {
         case .unspecified: .black
         case .none: nil
-        case let .color(color): color
+        case let .color(color): color.color
         }
     }
 

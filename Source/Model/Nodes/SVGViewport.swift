@@ -8,19 +8,20 @@ public struct SVGViewport: SVGNodeContainer {
     public var width: CGFloat
     public var height: CGFloat
     public var preserveAspectRatio: SVGPreserveAspectRatio
+    public var contents: [SVGNode]
 
+    public var id: String?
     public var transform: CGAffineTransform
     public var opacity: Double
-    public var id: String?
-    public var contents: [SVGNode] = []
 
-    public init(width: CGFloat, height: CGFloat, preserveAspectRatio: SVGPreserveAspectRatio, contents: [SVGNode] = []) {
+    public init(width: CGFloat = 0, height: CGFloat = 0, preserveAspectRatio: SVGPreserveAspectRatio = SVGPreserveAspectRatio(), contents: [SVGNode] = [], id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
         self.width = width
         self.height = height
         self.preserveAspectRatio = preserveAspectRatio
         self.contents = contents
-        self.transform = .identity
-        self.opacity = 1
+        self.id = id
+        self.transform = transform
+        self.opacity = opacity
     }
 
     public var size: CGSize {

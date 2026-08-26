@@ -3,6 +3,7 @@
 
 import CoreGraphics
 import Foundation
+import WebColor
 
 extension SVGHelper {
 
@@ -55,27 +56,8 @@ extension SVGHelper {
         return parseColor(value).map { SVGPaint.color($0) } ?? SVGPaint.none
     }
 
-    static func parseColor(_ string: String) -> SVGColor? {
-        let normalized = string.replacing(" ", with: "")
-        if normalized == "none" {
-            return .none
-        } else if let namedColor = SVGColor.by(name: normalized) {
-            return namedColor
-        } else {
-            return createColorFromHex(normalized)
-        }
-    }
-
-    static func createColorFromHex(_ hexString: String) -> SVGColor {
-        var cleanedHexString = hexString
-        if hexString.hasPrefix("#") {
-            cleanedHexString = hexString.replacing("#", with: "")
-        }
-        if cleanedHexString.count == 3 {
-            let x = Array(cleanedHexString)
-            cleanedHexString = "\(x[0])\(x[0])\(x[1])\(x[1])\(x[2])\(x[2])"
-        }
-        return SVGColor(hex: cleanedHexString, literal: hexString)
+    static func parseColor(_ string: String) -> WrittenWebColor? {
+        WrittenWebColor(string.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
 }

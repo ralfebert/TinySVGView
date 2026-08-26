@@ -5,13 +5,6 @@ import CoreGraphics
 
 public struct SVGRect: SVGShape {
 
-    public var transform: CGAffineTransform = .identity
-    public var opacity: Double = 1
-    public var id: String?
-
-    public var fill: SVGPaint = .unspecified
-    public var stroke: SVGStroke?
-
     public var x: CGFloat
     public var y: CGFloat
     public var width: CGFloat
@@ -19,13 +12,25 @@ public struct SVGRect: SVGShape {
     public var rx: CGFloat
     public var ry: CGFloat
 
-    public init(x: CGFloat = 0, y: CGFloat = 0, width: CGFloat = 0, height: CGFloat = 0, rx: CGFloat = 0, ry: CGFloat = 0) {
+    public var fill: SVGPaint
+    public var stroke: SVGStroke?
+
+    public var id: String?
+    public var transform: CGAffineTransform
+    public var opacity: Double
+
+    public init(x: CGFloat = 0, y: CGFloat = 0, width: CGFloat = 0, height: CGFloat = 0, rx: CGFloat = 0, ry: CGFloat = 0, fill: SVGPaint = .unspecified, stroke: SVGStroke? = nil, id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.rx = rx
         self.ry = ry
+        self.fill = fill
+        self.stroke = stroke
+        self.id = id
+        self.transform = transform
+        self.opacity = opacity
     }
 
     public var frame: CGRect {

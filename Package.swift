@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/CoreOffice/XMLCoder", from: "0.17.1"),
+        .package(url: "https://github.com/ralfebert/WebColor", from: "0.5.1"),
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
     ],
     targets: [
@@ -22,6 +23,7 @@ let package = Package(
             name: "TinySVGView",
             dependencies: [
                 .product(name: "XMLCoder", package: "XMLCoder"),
+                .product(name: "WebColor", package: "WebColor"),
             ],
             path: "Source",
             exclude: ["Info.plist"]

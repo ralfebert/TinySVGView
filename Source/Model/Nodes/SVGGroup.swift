@@ -9,15 +9,17 @@ public protocol SVGNodeContainer: SVGNode {
 
 public struct SVGGroup: SVGNodeContainer {
 
+    public var contents: [SVGNode]
+
+    public var id: String?
     public var transform: CGAffineTransform
     public var opacity: Double
-    public var id: String?
-    public var contents: [SVGNode] = []
 
-    public init(contents: [SVGNode], transform: CGAffineTransform = .identity, opacity: Double = 1) {
+    public init(contents: [SVGNode] = [], id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
+        self.contents = contents
+        self.id = id
         self.transform = transform
         self.opacity = opacity
-        self.contents = contents
     }
 
     public var bounds: CGRect {

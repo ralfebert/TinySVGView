@@ -5,24 +5,29 @@ import CoreGraphics
 
 public struct SVGLine: SVGShape {
 
-    public var transform: CGAffineTransform = .identity
-    public var opacity: Double = 1
-    public var id: String?
-
-    /// A line has nothing to fill, the property is only here to satisfy `SVGShape`.
-    public var fill: SVGPaint = .unspecified
-    public var stroke: SVGStroke?
-
     public var x1: CGFloat
     public var y1: CGFloat
     public var x2: CGFloat
     public var y2: CGFloat
 
-    public init(x1: CGFloat = 0, y1: CGFloat = 0, x2: CGFloat = 0, y2: CGFloat = 0) {
+    /// A line has nothing to fill, the property is only here to satisfy `SVGShape`.
+    public var fill: SVGPaint
+    public var stroke: SVGStroke?
+
+    public var id: String?
+    public var transform: CGAffineTransform
+    public var opacity: Double
+
+    public init(x1: CGFloat = 0, y1: CGFloat = 0, x2: CGFloat = 0, y2: CGFloat = 0, fill: SVGPaint = .unspecified, stroke: SVGStroke? = nil, id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
+        self.fill = fill
+        self.stroke = stroke
+        self.id = id
+        self.transform = transform
+        self.opacity = opacity
     }
 
     public var frame: CGRect {

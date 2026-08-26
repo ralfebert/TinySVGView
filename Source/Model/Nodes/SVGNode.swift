@@ -5,9 +5,9 @@ import CoreGraphics
 
 public protocol SVGNode {
 
+    var id: String? { get set }
     var transform: CGAffineTransform { get set }
     var opacity: Double { get set }
-    var id: String? { get set }
 
     var bounds: CGRect { get }
     var frame: CGRect { get }

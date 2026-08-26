@@ -240,14 +240,14 @@ extension SVGShape {
         case .none:
             try container.encode("none", forKey: SVGCodingKey("fill"))
         case let .color(color):
-            try container.encode(color.stringValue, forKey: SVGCodingKey("fill"))
+            try container.encode(color.description, forKey: SVGCodingKey("fill"))
         }
 
         guard let stroke else {
             return
         }
         if case let .color(color) = stroke.fill {
-            try container.encode(color.stringValue, forKey: SVGCodingKey("stroke"))
+            try container.encode(color.description, forKey: SVGCodingKey("stroke"))
         }
         if stroke.width != 1 {
             try container.encode(stroke.width.svgString, forKey: SVGCodingKey("stroke-width"))

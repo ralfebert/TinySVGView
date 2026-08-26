@@ -3,6 +3,7 @@
 
 import CoreText
 import SwiftUI
+import WebColor
 
 public struct SVGView: View {
 
@@ -78,7 +79,7 @@ private extension CGContext {
     func draw(path: CGPath, shape: some SVGShape, fillRule: CGPathFillRule = .winding) {
 
         if case let .color(color) = shape.fill {
-            setFillColor(color.cgColor)
+            setFillColor(color.color.cgColor)
             addPath(path)
             fillPath(using: fillRule)
         }
@@ -86,7 +87,7 @@ private extension CGContext {
         if let stroke = shape.stroke {
 
             if case let .color(color) = stroke.fill {
-                setFillColor(color.cgColor)
+                setFillColor(color.color.cgColor)
             }
 
             setLineWidth(stroke.width)
@@ -123,7 +124,7 @@ private extension CGContext {
         scaleBy(x: 1, y: -1)
 
         if let stroke = text.stroke, case let .color(color) = stroke.fill {
-            setStrokeColor(color.cgColor)
+            setStrokeColor(color.color.cgColor)
             setLineWidth(stroke.width)
             setTextDrawingMode(text.fillColor == nil ? .stroke : .fillStroke)
         }
@@ -142,10 +143,10 @@ private extension SVGNodeContainer {
 
 }
 
-public extension SVGColor {
+public extension WebColor {
 
     func toSwiftUI() -> Color {
-        Color(red: Double(r) / 0xFF, green: Double(g) / 0xFF, blue: Double(b) / 0xFF).opacity(opacity)
+        Color(cgColor)
     }
 
 }

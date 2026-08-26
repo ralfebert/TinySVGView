@@ -5,19 +5,24 @@ import CoreGraphics
 
 public struct SVGPolyline: SVGShape {
 
-    public var transform: CGAffineTransform = .identity
-    public var opacity: Double = 1
-    public var id: String?
-
-    public var fill: SVGPaint = .unspecified
-    public var stroke: SVGStroke?
-
     public var points: [CGPoint]
     public var fillRule: CGPathFillRule
 
-    public init(points: [CGPoint] = [], fillRule: CGPathFillRule = .winding) {
+    public var fill: SVGPaint
+    public var stroke: SVGStroke?
+
+    public var id: String?
+    public var transform: CGAffineTransform
+    public var opacity: Double
+
+    public init(points: [CGPoint] = [], fillRule: CGPathFillRule = .winding, fill: SVGPaint = .unspecified, stroke: SVGStroke? = nil, id: String? = nil, transform: CGAffineTransform = .identity, opacity: Double = 1) {
         self.points = points
         self.fillRule = fillRule
+        self.fill = fill
+        self.stroke = stroke
+        self.id = id
+        self.transform = transform
+        self.opacity = opacity
     }
 
     public var frame: CGRect {
